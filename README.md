@@ -68,6 +68,10 @@ python src/RandomName.py
 - **复制分享链接** 可分享链接给好友，让他们也体验一下
 - 可根据自身偏好，点击右上角按钮切换 **深色 / 浅色** 主题
 
+运行实例（支持PC+手机端）：
+<img width="441" height="506" alt="image" src="https://github.com/user-attachments/assets/95df299b-0952-4f36-a361-d97dcc6b148f" />
+
+
 > ！！！注意：直接以本地文件（`file://`）双击打开时，浏览器出于安全限制，复制功能会改用「长按复制」浮层；若将网页部署到 `https://` 站点（如 GitHub Pages），复制功能即可按预期工作。
 
 ---
