@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>随机姓名生成器</title>
+<style>
+  :root {
+    --bg: #fafafa; --card: #ffffff; --card-fg: #09090b;
+    --primary: #18181b; --primary-fg: #fafafa; --primary-hover: #27272a;
+    --secondary: #f4f4f5; --secondary-fg: #18181b; --muted-fg: #71717a;
+    --border: #e4e4e7; --radius: 10px; --radius-sm: 7px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05); --ok: #16a34a;
+  }
+  [data-theme="dark"] {
+    --bg: #09090b; --card: #121215; --card-fg: #fafafa;
+    --primary: #fafafa; --primary-fg: #18181b; --primary-hover: #e4e4e7;
+    --secondary: #27272a; --secondary-fg: #fafafa; --muted-fg: #a1a1aa;
+    --border: #27272a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg); color: var(--card-fg); line-height: 1.5;
+    -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px;
+  }
+  .container { width: 100%; max-width: 520px; margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .title { display: flex; align-items: center; gap: 10px; }
+  .title h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .title .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--primary); color: var(--primary-fg); display: flex; align-items: center; justify-content: center; }
+  .icon-btn { width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--card-fg); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background .15s ease; }
+  .icon-btn:hover { background: var(--secondary); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 16px; margin-bottom: 14px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted-fg); margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 7px; }
+  input[type="number"] { width: 100%; height: 40px; padding: 0 12px; font-size: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--card-fg); outline: none; }
+  input[type="number"]:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--secondary); }
+  .btn-primary { width: 100%; height: 48px; font-size: 15px; font-weight: 600; background: var(--primary); color: var(--primary-fg); border: 1px solid var(--primary); border-radius: var(--radius); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s ease; }
+  .btn-primary:hover { background: var(--primary-hover); opacity: .96; }
+  .btn-primary:active { transform: scale(.99); }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .btn-sm { height: 30px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--card); color: var(--card-fg); border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background .15s ease; }
+  .btn-sm:hover { background: var(--secondary); }
+  .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .name-chip { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 15px; cursor: pointer; transition: background .15s ease; -webkit-user-select: text; user-select: text; }
+  .name-chip:hover { background: var(--secondary); }
+  .name-chip .copy-ico { color: var(--muted-fg); opacity: 0; transition: opacity .12s; user-select: none; -webkit-user-select: none; }
+  .name-chip:hover .copy-ico { opacity: 1; }
+  .empty { text-align: center; color: var(--muted-fg); font-size: 13px; padding: 30px 10px; border: 1px dashed var(--border); border-radius: var(--radius-sm); }
+  footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted-fg); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--primary); color: var(--primary-fg); font-size: 13px; font-weight: 500; padding: 9px 16px; border-radius: 9999px; box-shadow: 0 6px 22px rgba(0,0,0,.22); opacity: 0; pointer-events: none; transition: all .22s ease; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .manual-copy { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.45); z-index: 60; padding: 20px; }
+  .manual-copy.show { display: flex; }
+  .manual-copy .mc-panel { width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .manual-copy .mc-title { font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 10px; }
+  .manual-copy .mc-text { width: 100%; height: 120px; resize: none; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 15px; line-height: 1.5; background: var(--bg); color: var(--fg); }
+  .manual-copy .mc-close { margin-top: 12px; width: 100%; padding: 10px; border: none; border-radius: var(--radius-sm); background: var(--primary); color: var(--primary-fg); font-size: 14px; font-weight: 500; cursor: pointer; }
+  @media (max-width: 420px) { .results { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="title">
+      <span class="logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <h1>随机姓名生成器</h1>
+    </div>
+    <button class="icon-btn" id="themeToggle" title="切换主题" aria-label="切换主题">
+      <svg id="themeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+  </header>
+
+  <div class="card">
+    <div class="card-title">设置</div>
+    <div class="field">
+      <label for="count">生成数量</label>
+      <input type="number" id="count" min="0" max="500" value="20" inputmode="numeric" />
+    </div>
+  </div>
+
+  <button class="btn-primary" id="generateBtn">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+    生成姓名
+  </button>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="toolbar">
+      <button class="btn-sm" id="copyAll">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        复制全部
+      </button>
+      <button class="btn-sm" id="shareBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        复制分享链接
+      </button>
+      <button class="btn-sm" id="clearBtn">清空</button>
+    </div>
+    <div class="results" id="results">
+      <div class="empty">点击「生成姓名」开始</div>
+    </div>
+  </div>
+
+  <footer>
+    <div>随机姓名生成器 · 零依赖</div>
+    <div id="footTime"></div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SURNAMES = ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周", "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗", "郑", "梁", "谢", "宋", "唐", "许", "韩", "冯", "邓", "曹", "彭", "曾", "萧", "田", "董", "袁", "潘", "于", "蒋", "蔡", "余", "杜", "叶", "程", "苏", "魏", "吕", "丁", "任", "沈", "姚", "卢", "姜", "崔", "钟", "谭", "陆", "汪", "范", "金", "石", "廖", "贾", "夏", "韦", "付", "方", "白", "邹", "孟", "熊", "秦", "邱", "江", "尹", "薛", "闫", "段", "雷", "侯", "龙", "史", "陶", "黎", "贺", "顾", "毛", "郝", "龚", "邵", "万", "钱", "严", "覃", "武", "戴", "莫", "孔", "向", "汤", "常", "阮", "倪", "施", "乔", "樊", "齐", "温", "易", "兰", "文", "芦", "牛", "安", "管", "殷", "霍", "翟", "佘", "葛", "伍", "辛", "练", "申", "曲", "焦", "代", "鲁", "季", "毕", "麦", "耿", "舒", "尚", "聂", "庄", "项", "盛", "童", "祝", "柴", "柳", "单", "岳", "阳", "骆", "纪", "欧", "左", "尤", "凌", "景", "詹", "路", "宁", "关", "丛", "翁", "容", "柯", "鲍", "蒲", "苗", "牟", "谷", "裴", "初", "屈", "成", "包", "游", "司", "祁", "靳", "甘", "席", "瞿", "欧阳", "卜", "褚", "解", "时", "费", "班", "华", "全", "房", "涂", "卓", "饶", "应", "卫", "丘", "隋", "米", "闵", "郎", "喻", "冉", "宫", "甄", "宣", "穆", "谈", "帅", "车", "母", "查", "戚", "符", "缪", "娄", "亢", "滕", "位", "奚", "边", "卞", "桂", "苟", "柏", "井", "冀", "邬", "吉", "敖", "池", "简", "蔺", "连", "艾", "蓝", "窦", "封", "古", "姬", "刁", "商", "栾", "强", "冷", "植", "郁", "臧", "晋", "党", "虞", "佟", "苑", "畅", "屠", "蒙", "巩", "麻", "晏", "相", "师", "鄢", "泮", "燕", "岑", "官", "仲", "羊", "揭", "仇", "邸", "宗", "荆", "盖", "粱", "原", "茅", "荣", "沙", "郜", "巫", "鞠", "罡", "来", "劳", "诸", "计", "乐", "双", "花", "冼", "尉", "木", "丰", "寇", "栗", "况", "干", "楼", "满", "桑", "湛", "谌", "储", "邦", "皮", "楚", "胥", "明", "平", "腾", "厉", "仉", "励", "竺", "闻", "宇", "支", "都", "折", "旷", "南", "战", "嵇", "化", "糜", "衣", "国", "逄", "门", "崇", "裘", "薄", "束", "宿", "东", "降", "逯", "伊", "修", "粟", "漆", "阙", "禹", "先", "银", "台", "和", "祖", "惠", "伦", "候", "阚", "慕", "戈", "富", "伏", "僧", "习", "云", "元", "狄", "危", "雍", "蔚", "索", "居", "浦", "权", "税", "谯", "於", "芮", "濮", "基", "寿", "凡", "卿", "酆", "苻", "保", "郗", "渠", "琚", "淡", "由", "豆", "扈", "仁", "呼", "矫", "巢", "盘", "令狐", "敬", "巴", "茆", "鱼", "戎", "缠", "区", "幸", "海", "弓", "阴", "住", "晁", "菅", "印", "汝", "历", "么", "乌", "贡", "妙", "荀", "鹿", "邰", "随", "雒", "贝", "录", "鲜", "茹", "种", "农", "佐", "赫", "字", "油", "但", "綦", "美", "利", "钮", "信", "勾", "火", "昝", "圣", "颉", "从", "靖", "开", "公", "那", "山", "智", "补", "虎", "司马", "上官", "诸葛", "东方", "皇甫", "尉迟", "公羊", "澹台", "公冶", "宗政", "濮阳", "淳于", "单于", "太叔", "申屠", "公孙", "仲孙", "轩辕", "钟离", "宇文", "长孙", "慕容", "鲜于", "闾丘", "司徒", "司空", "亓官", "司寇", "子车", "颛孙", "端木", "巫马", "公西", "漆雕", "乐正", "壤驷", "公良", "拓跋", "夹谷", "宰父", "谷梁", "段干", "百里", "东郭", "南门", "呼延", "羊舌", "微生", "梁丘", "左丘", "东门", "西门", "第五", "言"];
+const CHARACTERS = ["的", "一", "是", "了", "我", "不", "人", "在", "他", "有", "这", "上", "们", "来", "到", "时", "大", "地", "为", "子", "中", "你", "说", "生", "国", "年", "着", "就", "那", "和", "要", "她", "出", "也", "得", "里", "后", "自", "以", "会", "家", "可", "下", "而", "过", "天", "去", "能", "对", "小", "多", "然", "于", "心", "学", "么", "之", "都", "好", "看", "起", "发", "当", "没", "成", "只", "如", "事", "把", "还", "用", "第", "样", "道", "想", "作", "种", "开", "美", "总", "从", "无", "情", "己", "面", "最", "女", "但", "现", "前", "些", "所", "同", "日", "手", "又", "行", "意", "动", "方", "期", "它", "头", "经", "长", "儿", "回", "位", "分", "爱", "老", "因", "很", "给", "名", "法", "间", "斯", "知", "世", "什", "两", "次", "使", "身", "者", "被", "高", "已", "亲", "其", "进", "此", "话", "常", "与", "活", "正", "感", "见", "明", "问", "力", "理", "尔", "点", "文", "几", "定", "本", "公", "特", "做", "外", "孩", "相", "西", "果", "走", "将", "月", "十", "实", "向", "声", "车", "全", "信", "重", "三", "机", "工", "物", "气", "每", "并", "别", "真", "打", "太", "新", "比", "才", "便", "夫", "再", "书", "部", "水", "像", "眼", "等", "体", "却", "加", "电", "主", "界", "门", "利", "海", "受", "听", "表", "德", "少", "克", "代", "员", "许", "先", "口", "由", "死", "安", "写", "性", "马", "光", "白", "或", "住", "难", "望", "教", "命", "花", "结", "乐", "色", "更", "拉", "东", "神", "记", "处", "让", "母", "父", "应", "直", "字", "场", "平", "报", "友", "关", "放", "至", "张", "认", "接", "告", "入", "笑", "内", "英", "军", "候", "民", "岁", "往", "何", "度", "山", "觉", "路", "带", "万", "男", "边", "风", "解", "叫", "任", "金", "快", "原", "吃", "妈", "变", "通", "师", "立", "象", "数", "四", "失", "满", "战", "远", "格", "士", "音", "轻", "目", "条", "呢", "病", "始", "达", "深", "完", "今", "提", "求", "清", "王", "化", "空", "业", "思", "切", "怎", "非", "找", "片", "罗", "钱", "吗", "语", "元", "喜", "曾", "离", "飞", "科", "言", "干", "流", "欢", "约", "各", "即", "指", "合", "反", "题", "必", "该", "论", "交", "终", "林", "请", "医", "晚", "制", "球", "决", "传", "画", "保", "读", "运", "及", "则", "房", "早", "院", "量", "苦", "火", "布", "品", "近", "坐", "产", "答", "星", "精", "视", "五", "连", "司", "巴", "奇", "管", "类", "未", "朋", "且", "婚", "台", "夜", "青", "北", "队", "久", "乎", "越", "观", "落", "尽", "形", "影", "红", "爸", "百", "令", "周", "吧", "识", "步", "希", "亚", "术", "留", "市", "半", "热", "送", "兴", "造", "谈", "容", "极", "随", "演", "收", "首", "根", "讲", "整", "式", "取", "照", "办", "强", "石", "古", "华", "拿", "计", "您", "装", "似", "足", "双", "妻", "尼", "转", "诉", "米", "称", "丽", "客", "南", "领", "节", "衣", "站", "黑", "刻", "统", "断", "福", "城", "故", "历", "惊", "脸", "选", "包", "紧", "争", "另", "建", "维", "绝", "树", "系", "伤", "示", "愿", "持", "千", "史", "谁", "准", "联", "妇", "纪", "基", "买", "志", "静", "阿", "诗", "独", "复", "痛", "消", "社", "算", "义", "竟", "确", "酒", "需", "单", "治", "卡", "幸", "兰", "念", "举", "仅", "钟", "怕", "共", "毛", "句", "息", "功", "官", "待", "究", "跟", "穿", "室", "易", "游", "程", "号", "居", "考", "突", "皮", "哪", "费", "倒", "价", "图", "具", "刚", "脑", "永", "歌", "响", "商", "礼", "细", "专", "黄", "块", "脚", "味", "灵", "改", "据", "般", "破", "引", "食", "仍", "存", "众", "注", "笔", "甚", "某", "沉", "血", "备", "习", "校", "默", "务", "土", "微", "娘", "须", "试", "怀", "料", "调", "广", "苏", "显", "赛", "查", "密", "议", "底", "列", "富", "梦", "错", "座", "参", "八", "除", "跑", "亮", "假", "印", "设", "线", "温", "虽", "掉", "京", "初", "养", "香", "停", "际", "致", "阳", "纸", "李", "纳", "屄", "验", "助", "激", "够", "严", "证", "帝", "饭", "忘", "趣", "支", "春", "集", "丈", "木", "研", "班", "普", "导", "顿", "睡", "展", "跳", "获", "艺", "六", "波", "察", "群", "皇", "段", "急", "庭", "创", "区", "奥", "器", "谢", "弟", "店", "否", "害", "草", "排", "背", "止", "组", "州", "朝", "封", "睛", "板", "角", "况", "曲", "馆", "育", "忙", "质", "河", "续", "哥", "呼", "若", "推", "境", "遇", "雨", "标", "姐", "充", "围", "案", "伦", "护", "冷", "警", "贝", "著", "雪", "索", "剧", "啊", "船", "险", "烟", "依", "斗", "值", "帮", "汉", "慢", "佛", "肯", "闻", "唱", "沙", "局", "伯", "族", "低", "玩", "资", "屋", "击", "速", "顾", "泪", "屌", "洲", "团", "圣", "旁", "堂", "兵", "七", "露", "园", "牛", "哭", "旅", "街", "劳", "型", "烈", "姑", "陈", "莫", "鱼", "异", "抱", "宝", "权", "鲁", "简", "态", "级", "票", "怪", "寻", "杀", "律", "胜", "份", "汽", "右", "洋", "范", "床", "舞", "秘", "午", "登", "楼", "贵", "吸", "责", "例", "追", "较", "职", "属", "渐", "左", "录", "丝", "牙", "党", "继", "托", "赶", "章", "智", "冲", "叶", "胡", "吉", "卖", "坚", "喝", "肉", "遗", "救", "修", "松", "临", "藏", "担", "戏", "善", "卫", "药", "悲", "敢", "靠", "伊", "村", "戴", "词", "森", "耳", "差", "短", "祖", "云", "规", "窗", "散", "迷", "油", "旧", "适", "乡", "架", "恩", "投", "弹", "铁", "博", "雷", "府", "压", "超", "负", "勒", "杂", "醒", "洗", "采", "毫", "嘴", "毕", "九", "冰", "既", "状", "乱", "景", "席", "珍", "童", "顶", "派", "素", "脱", "农", "疑", "练", "野", "按", "犯", "拍", "征", "坏", "骨", "余", "承", "置", "臂", "彩", "灯", "巨", "琴", "免", "环", "姆", "暗", "换", "技", "翻", "束", "增", "忍", "餐", "洛", "塞", "缺", "忆", "判", "欧", "层", "付", "阵", "玛", "批", "岛", "项", "狗", "休", "懂", "武", "革", "良", "恶", "恋", "委", "拥", "娜", "妙", "探", "呀", "营", "退", "摇", "弄", "桌", "熟", "诺", "宣", "银", "势", "奖", "宫", "忽", "套", "康", "供", "优", "课", "鸟", "喊", "降", "夏", "困", "刘", "罪", "亡", "鞋", "健", "模", "败", "伴", "守", "挥", "鲜", "财", "孤", "枪", "禁", "恐", "伙", "杰", "迹", "妹", "遍", "盖", "副", "坦", "牌", "江", "顺", "秋", "萨", "菜", "划", "授", "归", "浪", "凡", "预", "奶", "雄", "升", "编", "典", "袋", "莱", "含", "盛", "济", "蒙", "棋", "端", "腿", "招", "释", "介", "烧", "误", "裈", "二", "零", "亿", "蓝", "绿", "紫", "灰", "粉", "橙", "褐", "棕", "猫", "猪", "羊", "鸡", "鸭", "鹅", "狮", "豹", "狼", "狐", "兔", "鼠", "蛇", "猴", "鹿", "熊", "鹰", "燕", "雀", "鸦", "鹊", "蝶", "蜂", "蚁", "蝉", "蛙", "龟", "蟹", "虾", "竹", "梅", "菊", "荷", "莲", "柏", "柳", "杨", "槐", "桃", "杏", "梨", "枣", "桔", "橘", "瓜", "豆", "麦", "稻", "谷", "菇", "鼻", "舌", "唇", "齿", "喉", "颈", "肩", "胸", "腹", "腰", "膝", "肘", "臀", "肝", "肺", "肾", "胃", "肠", "肤", "躺", "咬", "嚼", "吞", "吐", "骂", "扔", "抛", "锁", "割", "剪", "缝", "刷", "擦", "扫", "拖", "搬", "抬", "扛", "握", "捏", "掐", "敲", "踢", "踩", "跺", "蹲", "跪", "爬", "滚", "矮", "胖", "瘦", "粗", "宽", "窄", "厚", "薄", "浅", "丑", "臭", "甜", "酸", "辣", "咸", "淡", "凉", "暖", "秒", "币", "恨", "仇", "怨", "怒", "哀", "愁", "忧", "盼", "霜", "雾", "雹", "霞", "虹", "墙", "壁", "砖", "瓦", "梁", "柱", "阶", "梯", "池", "塘", "桥", "巷", "轮", "胎", "港", "刀", "剑", "弓", "箭", "斧", "锤", "锯", "钳", "铲", "锄", "犁", "耙", "网", "绳", "墨", "砚", "册", "页", "枝", "杆", "棒", "棍", "筒", "盆", "碗", "盘", "碟", "杯", "壶", "瓶", "罐", "缸", "锅", "勺", "筷", "叉", "服", "裤", "裙", "帽", "袜", "巾", "褥", "枕", "帐", "帘", "扣", "袖", "汤", "粥", "糕", "饼", "馒", "饺", "蛋", "盐", "糖", "醋", "酱", "茶", "咱", "俺", "彼", "昂", "傲", "拔", "摆", "拜", "版", "拌", "绑", "榜", "膀", "傍", "胞", "饱", "堡", "暴", "爆", "倍", "奔", "笨", "崩", "逼", "闭", "扁", "辨", "辩", "宾", "丙", "柄", "拨", "玻", "剥", "播", "泊", "脖", "补", "捕", "猜", "材", "裁", "残", "蚕", "惭", "惨", "灿", "仓", "苍", "舱", "操", "侧", "测", "插", "拆", "柴", "缠", "尝", "偿", "厂", "畅", "抄", "潮", "吵", "炒", "彻", "臣", "辰", "呈", "乘", "迟", "尺", "虫", "崇", "抽", "绸", "厨", "础", "储", "触", "川", "串", "吹", "垂", "纯", "刺", "匆", "聪", "丛", "凑", "促", "催", "脆", "寸", "搭", "呆", "丹", "胆", "挡", "荡", "悼", "盗", "敌", "递", "颠", "垫", "殿", "跌", "叠", "丁", "订", "丢", "冬", "冻", "洞", "逗", "督", "毒", "堵", "渡", "锻", "堆", "吨", "盾", "夺", "朵", "躲", "额", "饿", "罚", "防", "仿", "访", "肥", "废", "纷", "坟", "奋", "愤", "丰", "疯", "峰", "锋", "逢", "伏", "扶", "浮", "幅", "符", "俯", "辅", "腐", "附", "覆", "概", "甘", "钢", "岗", "搞", "阁", "攻", "恭", "贡", "勾", "沟", "钩", "构", "购", "估", "股", "鼓", "固", "刮", "挂", "乖", "拐", "冠", "贯", "惯", "灌", "鬼", "哈", "寒", "汗", "航", "浩", "核", "盒", "贺", "洪", "湖", "虎", "互", "户", "缓", "唤", "患", "荒", "毁", "悔", "汇", "惠", "昏", "浑", "混", "货", "肌", "积", "绩", "疾", "挤", "忌", "剂", "季", "寄", "夹", "佳", "甲", "驾", "尖", "艰", "检", "减", "件", "荐", "贱", "舰", "践", "鉴", "键", "姜", "郊", "骄", "胶", "焦", "搅", "轿", "皆", "洁", "戒", "届", "借", "斤", "津", "筋", "劲", "井", "净", "敬", "拒", "距", "聚", "卷", "均", "君", "俊", "抗", "棵", "颗", "壳", "咳", "渴", "孔", "库", "款", "狂", "亏", "昆", "扩", "括", "阔", "啦", "拦", "栏", "烂", "郎", "廊", "朗", "牢", "累", "厘", "黎", "厉", "隶", "粒", "怜", "炼", "谅", "辆", "疗", "劣", "猎", "裂", "邻", "淋", "铃", "龄", "溜", "龙", "咙", "漏", "炉", "陆", "萝", "逻", "麻", "埋", "矛", "茅", "冒", "贸", "枚", "媒", "煤", "闷", "猛", "棉", "勉", "苗", "描", "庙", "灭", "敏", "鸣", "摸", "摩", "磨", "末", "陌", "谋", "牧", "墓", "幕", "乃", "囊", "闹", "嫩", "泥", "宁", "奴", "努", "挪", "哦", "偶", "叛", "炮", "泡", "陪", "赔", "佩", "配", "喷", "棚", "蓬", "碰", "疲", "匹", "屁", "偏", "篇", "骗", "飘", "拼", "贫", "评", "凭", "婆", "迫", "剖", "扑", "铺", "仆", "朴", "谱", "欺", "齐", "骑", "旗", "乞", "岂", "企", "启", "弃", "契", "恰", "迁", "牵", "铅", "谦", "遣", "欠", "抢", "悄", "瞧", "巧", "窃", "侵", "勤", "倾", "晴", "顷", "庆", "穷", "丘", "驱", "屈", "趋", "娶", "劝", "燃", "染", "嚷", "饶", "扰", "绕", "惹", "仁", "荣", "融", "柔", "乳", "软", "弱", "撒", "洒", "伞", "丧", "纱", "傻", "晒", "删", "闪", "陕", "赏", "尚", "绍", "舍", "射", "涉", "摄", "申", "伸", "审", "婶", "省", "施", "湿", "拾", "驶", "氏", "侍", "饰", "逝", "兽", "售", "叔", "殊", "疏", "输", "蔬", "述", "竖", "衰", "摔", "甩", "帅", "税", "私", "寺", "宋", "诵", "搜", "艘", "俗", "碎", "孙", "损", "缩", "塔", "涛", "逃", "讨", "疼", "替", "田", "填", "挑", "贴", "厅", "挺", "铜", "偷", "透", "徒", "途", "涂", "驼", "妥", "拓", "挖", "娃", "歪", "弯", "顽", "危", "威", "违", "唯", "伟", "伪", "谓", "喂", "慰", "魏", "纹", "吻", "稳", "翁", "窝", "卧", "乌", "污", "伍", "析", "悉", "惜", "稀", "溪", "熄", "袭", "媳", "隙", "瞎", "峡", "狭", "吓", "仙", "纤", "掀", "闲", "弦", "贤", "县", "限", "宪", "陷", "献", "腺", "箱", "详", "享", "销", "晓", "孝", "效", "歇", "协", "邪", "泄", "泻", "辛", "欣", "薪", "兄", "凶", "羞", "朽", "秀", "虚", "徐", "序", "叙", "畜", "蓄", "悬", "旋", "穴", "询", "巡", "讯", "训", "迅", "押", "芽", "咽", "淹", "岩", "沿", "炎", "颜", "厌", "宴", "央", "仰", "妖", "邀", "遥", "爷", "冶", "仪", "宜", "姨", "移", "亦", "役", "译", "疫", "益", "谊", "溢", "毅", "阴", "饮", "婴", "迎", "盈", "蝇", "赢", "映", "硬", "哟", "勇", "涌", "悠", "尤", "邮", "犹", "幼", "予", "娱", "渔", "愉", "愚", "宇", "羽", "玉", "郁", "狱", "浴", "域", "欲", "喻", "御", "愈", "圆", "援", "缘", "源", "岳", "悦", "阅", "跃", "允", "孕", "灾", "栽", "宰", "赞", "脏", "遭", "糟", "择", "泽", "贼", "赠", "扎", "眨", "炸", "摘", "宅", "债", "寨", "沾", "粘", "占", "涨", "掌", "账", "仗", "召", "罩", "遮", "折", "哲", "浙", "针", "侦", "诊", "振", "镇", "震", "政", "症", "汁", "芝", "织", "肢", "植", "旨", "址", "秩", "逐", "煮", "驻", "祝", "筑", "抓", "庄", "壮", "捉", "姿", "滋", "仔", "宗", "综", "纵", "奏", "租", "钻", "尊", "遵", "昨"];
+
+let lastNames = [];
+
+function randint(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+function generate() {
+  const n = Math.max(0, Math.min(500, parseInt(document.getElementById('count').value) || 0));
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const SurName = choice(SURNAMES);
+    const i = randint(1, 2);
+    let GivenName = "";
+    for (let j = 1; j <= i; j++) GivenName += choice(CHARACTERS);
+    out.push(SurName + GivenName);
+  }
+  lastNames = out;
+  render(out);
+  syncHash();
+}
+
+function render(names) {
+  const box = document.getElementById('results');
+  if (!names.length) { box.innerHTML = '<div class="empty">点击「生成姓名」开始</div>'; return; }
+  box.innerHTML = names.map(n =>
+    '<div class="name-chip" data-name="' + n + '"><span>' + n + '</span>' +
+    '<svg class="copy-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></div>'
+  ).join('');
+}
+
+function copyText(text) {
+  return new Promise((resolve) => {
+    // file:// 等非安全上下文:剪贴板权限无法持久化,任何 JS 写入都会反复弹窗且不记住
+    // 直接交给调用点弹"长按复制"浮层,不触发权限申请
+    if (!window.isSecureContext) { resolve(false); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      let settled = false;
+      const timer = setTimeout(() => { if (!settled) { settled = true; resolve(legacyCopy(text)); } }, 700);
+      navigator.clipboard.writeText(text)
+        .then(() => { if (!settled) { settled = true; clearTimeout(timer); resolve(true); } })
+        .catch(() => { if (!settled) { settled = true; clearTimeout(timer); resolve(legacyCopy(text)); } });
+      return;
+    }
+    resolve(legacyCopy(text));
+  });
+}
+function legacyCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0';
+    ta.style.width = '100%'; ta.style.fontSize = '16px'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) { return false; }
+}
+function showManualCopy(text) {
+  let box = document.getElementById('manualCopy');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'manualCopy'; box.className = 'manual-copy';
+    box.innerHTML = '<div class="mc-panel"><div class="mc-title">请长按下方文本复制</div><textarea class="mc-text" readonly></textarea><button class="mc-close">关闭</button></div>';
+    document.body.appendChild(box);
+    box.querySelector('.mc-close').addEventListener('click', () => box.classList.remove('show'));
+  }
+  const t = box.querySelector('.mc-text'); t.value = text; t.focus(); t.select(); t.setSelectionRange(0, text.length);
+  box.classList.add('show');
+}
+
+document.getElementById('results').addEventListener('click', (e) => {
+  const chip = e.target.closest('.name-chip'); if (!chip) return;
+  copyText(chip.dataset.name).then((ok) => { if (ok) toast('已复制：' + chip.dataset.name); else showManualCopy(chip.dataset.name); });
+});
+document.getElementById('copyAll').addEventListener('click', () => {
+  if (!lastNames.length) return toast('还没有生成的姓名');
+  copyText(lastNames.join('\n')).then((ok) => { if (ok) toast('已复制全部 ' + lastNames.length + ' 个姓名'); else showManualCopy(lastNames.join('\n')); });
+});
+document.getElementById('clearBtn').addEventListener('click', () => { lastNames = []; render([]); toast('已清空'); });
+document.getElementById('shareBtn').addEventListener('click', () => {
+  syncHash();
+  copyText(location.href).then((ok) => { if (ok) toast('分享链接已复制'); else showManualCopy(location.href); });
+});
+document.getElementById('generateBtn').addEventListener('click', generate);
+
+function syncHash() {
+  const p = new URLSearchParams();
+  p.set('n', Math.max(0, Math.min(500, parseInt(document.getElementById('count').value) || 0)));
+  history.replaceState(null, '', '#' + p.toString());
+}
+(function loadHash() {
+  const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+  if (p.has('n')) document.getElementById('count').value = Math.max(0, Math.min(500, parseInt(p.get('n')) || 0));
+})();
+
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  themeIcon.innerHTML = dark
+    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+    : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+}
+applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+themeToggle.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark'));
+
+document.getElementById('footTime').textContent = '更新于 ' + new Date().toISOString().slice(0, 10);
+</script>
+</body>
+</html>
